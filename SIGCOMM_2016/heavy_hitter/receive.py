@@ -14,17 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from scapy.all import sniff, sendp
-from scapy.all import Packet
-from scapy.all import ShortField, IntField, LongField, BitField
+from scapy.all import sniff
+from scapy.all import IP
 
-import sys
-import struct
+VALID_IPS = ("10.0.0.1", "10.0.0.2", "10.0.0.3")
+totals = {}
 
 def handle_pkt(pkt):
-    pkt = str(pkt)
-    print pkt
-    sys.stdout.flush()
+    if IP in pkt:
+        src_ip = pkt[IP].src
+        if src_ip in VALID_IPS:
+            if src_ip not in totals:
+                totals[src_ip] = 0
+            totals[src_ip] += 1
+            print ("Received from %s total: %s" %
+                    (src_ip, totals[src_ip]))
 
 def main():
     sniff(iface = "eth0",

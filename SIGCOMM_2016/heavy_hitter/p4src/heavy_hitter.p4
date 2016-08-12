@@ -97,12 +97,6 @@ action _drop() {
 header_type custom_metadata_t {
     fields {
         nhop_ipv4: 32;
-        // Add metadata for hashes
-        hash_val1: 16;
-        hash_val2: 16;
-        count_val1: 16;
-        count_val2: 16;
-        is_heavy_hitter: 8;
     }
 }
 
@@ -118,76 +112,25 @@ action set_dmac(dmac) {
     modify_field(ethernet.dstAddr, dmac);
 }
 
-// Define the field list to compute the hash on
-field_list ipv4_hash_fields {
-    ipv4.srcAddr;
+counter my_indirect_counter {
+    type: packets;
+    static: m_table;
+    instance_count: 1024;
 }
 
-// Define two different hash functions to store the counts
-field_list_calculation heavy_hitter_hash1 {
-    input { 
-        ipv4_hash_fields;
+action m_action(idx) {
+    count(my_indirect_counter, idx);
+}
+
+table m_table {
+    reads {
+        ipv4.srcAddr : lpm;
     }
-    algorithm : csum16;
-    output_width : 16;
-}
-
-field_list_calculation heavy_hitter_hash2 {
-    input { 
-        ipv4_hash_fields;
+    actions {
+        m_action;
+        _drop;
     }
-    algorithm : crc16;
-    output_width : 16;
-}
-
-// Define the registers to store the counts
-register heavy_hitter_counter1{
-    width : 16;
-    instance_count : 16;
-}
-
-register heavy_hitter_counter2{
-    width : 16;
-    instance_count : 16;
-}
-
-// Actions to set heavy hitter filter
-action set_heavy_hitter_count1() {
-    modify_field_with_hash_based_offset(custom_metadata.hash_val1, 0,
-                                        heavy_hitter_hash1, 16);
-    register_read(custom_metadata.count_val1, heavy_hitter_counter1, custom_metadata.hash_val1);
-    add_to_field(custom_metadata.count_val1, 1);
-    register_write(heavy_hitter_counter1, custom_metadata.hash_val1, custom_metadata.count_val1);
-}
-
-action set_heavy_hitter_count2() {
-    modify_field_with_hash_based_offset(custom_metadata.hash_val2, 0,
-                                        heavy_hitter_hash2, 16);
-    register_read(custom_metadata.count_val2, heavy_hitter_counter2, custom_metadata.hash_val2);
-    add_to_field(custom_metadata.count_val2, 1);
-    register_write(heavy_hitter_counter2, custom_metadata.hash_val2, custom_metadata.count_val2);
-}
-
-// Action to set the heavy hitter metadata indicator
-action set_heavy_hitter() {
-    modify_field(custom_metadata.is_heavy_hitter, 1);
-}
-
-// Define the tables to run actions
-table set_heavy_hitter_count_table1 {
-    actions { set_heavy_hitter_count1; }
-    size: 1;
-}
-
-table set_heavy_hitter_count_table2 {
-    actions { set_heavy_hitter_count2; }
-    size: 1;
-}
-
-// Define table to set the heavy hitter metadata
-table set_heavy_hitter_table {
-    actions { set_heavy_hitter; }
-    size: 1;
+    size : 1024;
 }
 
 table ipv4_lpm {
@@ -228,13 +171,8 @@ table send_frame {
 }
 
 control ingress {
+    apply(m_table);
     apply(ipv4_lpm);
-    // Add table control here
-    apply(set_heavy_hitter_count_table1);
-    apply(set_heavy_hitter_count_table2);
-    if (custom_metadata.count_val1 > 1000 and custom_metadata.count_val2 > HEAVY_HITTER_THRESHOLD) {
-        apply(set_heavy_hitter_table);
-    }
     apply(forward);
 }
 

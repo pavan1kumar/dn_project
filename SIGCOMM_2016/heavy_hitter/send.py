@@ -14,9 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from scapy.all import Ether, IP, sendp
+from scapy.all import Ether, IP, sendp, get_if_hwaddr, get_if_list
 
-import networkx as nx
 
 import sys
 
@@ -37,11 +36,47 @@ def read_topo():
             links.append( (a, b) )
     return int(nb_hosts), int(nb_switches), links
 
-def main():
-    for i in range(1):
-        p = Ether(dst="00:00:00:00:00:02")/IP(dst="10.0.0.2")
+def main(dst, num_packets):
+    dst_mac = None
+    dst_ip = None
+    src_mac = [get_if_hwaddr(i) for i in get_if_list() if i == 'eth0']
+    if len(src_mac) < 1:
+        print ("No interface for output")
+        sys.exit(1)
+    src_mac = src_mac[0]
+    src_ip = None
+    if src_mac =="00:00:00:00:00:01":
+        src_ip = "10.0.0.1"
+    elif src_mac =="00:00:00:00:00:02":
+        src_ip = "10.0.0.2"
+    elif src_mac =="00:00:00:00:00:03":
+        src_ip = "10.0.0.3"
+    else:
+        print ("Invalid source host")
+        sys.exit(1)
+
+    if dst == 'h1':
+        dst_mac = "00:00:00:00:00:01"
+        dst_ip = "10.0.0.1"
+    elif dst == 'h2':
+        dst_mac = "00:00:00:00:00:02"
+        dst_ip = "10.0.0.2"
+    elif dst == 'h3':
+        dst_mac = "00:00:00:00:00:03"
+        dst_ip = "10.0.0.3"
+    else:
+        print ("Invalid host to send to")
+        sys.exit(1)
+    for i in range(num_packets):
+        p = Ether(dst=dst_mac,src=src_mac)/IP(dst=dst_ip,src=src_ip)
         print p.show()
         sendp(p, iface = "eth0")
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) < 3:
+        print("Usage: python send.py dst_host_name num_packets")
+        sys.exit(1)
+    else:
+        dst_name = sys.argv[1]
+        num_packets = int(sys.argv[2])
+        main(dst_name, num_packets)
