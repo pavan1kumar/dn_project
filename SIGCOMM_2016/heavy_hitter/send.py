@@ -71,6 +71,7 @@ def send_random_traffic(dst):
         print ("Invalid host to send to")
         sys.exit(1)
 
+    total_pkts = 0
     random_ports = random.sample(xrange(1024, 65535), 10)
     for port in random_ports:
         num_packets = random.randint(50, 250)
@@ -80,6 +81,8 @@ def send_random_traffic(dst):
             p = p/TCP(dport=port)/Raw(load=data)
             print p.show()
             sendp(p, iface = "eth0")
+            total_pkts += 1
+    print "Sent %s packets in total" % total_pkts
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
