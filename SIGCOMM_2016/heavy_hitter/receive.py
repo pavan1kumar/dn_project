@@ -15,20 +15,25 @@
 # limitations under the License.
 
 from scapy.all import sniff
-from scapy.all import IP
+from scapy.all import IP, TCP
 
 VALID_IPS = ("10.0.0.1", "10.0.0.2", "10.0.0.3")
 totals = {}
 
 def handle_pkt(pkt):
-    if IP in pkt:
+    if IP in pkt and TCP in pkt:
         src_ip = pkt[IP].src
+        dst_ip = pkt[IP].dst
+        proto = pkt[IP].proto
+        sport = pkt[TCP].sport
+        dport = pkt[TCP].dport
+        id_tup = (src_ip, dst_ip, proto, sport, dport)
         if src_ip in VALID_IPS:
-            if src_ip not in totals:
-                totals[src_ip] = 0
-            totals[src_ip] += 1
+            if id_tup not in totals:
+                totals[id_tup] = 0
+            totals[id_tup] += 1
             print ("Received from %s total: %s" %
-                    (src_ip, totals[src_ip]))
+                    (id_tup, totals[id_tup]))
 
 def main():
     sniff(iface = "eth0",

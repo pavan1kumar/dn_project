@@ -14,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from scapy.all import Ether, IP, sendp, get_if_hwaddr, get_if_list
-
-
+from scapy.all import Ether, IP, sendp, get_if_hwaddr, get_if_list, TCP, Raw
 import sys
+import random, string
+
+def randomword(max_length):
+    length = random.randint(1, max_length)
+    return ''.join(random.choice(string.lowercase) for i in range(length))
 
 def read_topo():
     nb_hosts = 0
@@ -36,7 +39,7 @@ def read_topo():
             links.append( (a, b) )
     return int(nb_hosts), int(nb_switches), links
 
-def main(dst, num_packets):
+def send_random_traffic(dst):
     dst_mac = None
     dst_ip = None
     src_mac = [get_if_hwaddr(i) for i in get_if_list() if i == 'eth0']
@@ -67,16 +70,21 @@ def main(dst, num_packets):
     else:
         print ("Invalid host to send to")
         sys.exit(1)
-    for i in range(num_packets):
-        p = Ether(dst=dst_mac,src=src_mac)/IP(dst=dst_ip,src=src_ip)
-        print p.show()
-        sendp(p, iface = "eth0")
+
+    random_ports = random.sample(xrange(1024, 65535), 10)
+    for port in random_ports:
+        num_packets = random.randint(50, 250)
+        for i in range(num_packets):
+            data = randomword(100)
+            p = Ether(dst=dst_mac,src=src_mac)/IP(dst=dst_ip,src=src_ip)
+            p = p/TCP(dport=port)/Raw(load=data)
+            print p.show()
+            sendp(p, iface = "eth0")
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print("Usage: python send.py dst_host_name num_packets")
+    if len(sys.argv) < 2:
+        print("Usage: python send.py dst_host_name")
         sys.exit(1)
     else:
         dst_name = sys.argv[1]
-        num_packets = int(sys.argv[2])
-        main(dst_name, num_packets)
+        send_random_traffic(dst_name)
