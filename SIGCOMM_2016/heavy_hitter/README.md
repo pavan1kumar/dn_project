@@ -28,8 +28,7 @@ In this tutorial, we simply react to detected heavy hitters by dropping the pack
 
 ## Running the starter code
 
-// JK: Let's add one line about the starter code. standard counter, the table entry is pre-inserted by control planei by CLI commands (commands.txt). Advise readers to first understand what the starter code does by reading the p4 code and CLI commands.
-// JK: I believe you will walk through the codes/commands during the session, though.
+The starter code named `heavy_hitter.p4` is located under the `p4src` directory. The starter code contains the logic for simple L2 forwarding. In addition to that, it contains the logic to increment the P4 counter when a known flow rule is detected. The flow rule that is installed by the user (or by a control plane) is located in `commands.txt`. It contains the list of CLI commands to set the default table action, as well as actions for a particular match. Please make sure to understand both files before moving on.
 
 To compile the p4 code under `p4src` and run the switch and the mininet instance, simply run `./run_demo.sh`, which will fire up a mininet instance of 3 hosts (`h1, h2, h3`) and 1 switch (`s1`).
 Once the p4 source compiles without error and after all the flow rules has been added, run `xterm h1 h2` on the mininet prompt. It will look something like the below. (If there are any errors at this stage, something is not right. Please let the organizer know as soon as possible.)
@@ -58,8 +57,7 @@ The overview of things to complete are as follows.
   * You don't have to worry about writing the hash functions. You can simply use csum16 and crc16. Also, refer to how ipv4_checksum is computed to generate the hash value
 5. Define registers with enough space to store the counts
 6. Define action to compute the hash, read the current value of the register and update the register as packets come in
-  * Hint: You will have to use these primitives. `modify_field_with_hash_based_offset`, `register_read`, `register_write`, `add_to_field`. 
-  // JK: add a link to https://github.com/p4lang/p4-hlir/blob/master/p4_hlir/frontend/primitives.json for more info about the primitives. 
+  * Hint: You will have to use these primitives. `modify_field_with_hash_based_offset`, `register_read`, `register_write`, `add_to_field`. You can find more about the primitives at the following [link.](https://github.com/p4lang/p4-hlir/blob/master/p4_hlir/frontend/primitives.json "List of P4 Primitives")
   * You can choose to write two separate actions or a single action that updates both hashes.
 7. Define tables to run the action(s) as defined above.
 8. Define tables to drop the table when you detect the heavy hitter.
