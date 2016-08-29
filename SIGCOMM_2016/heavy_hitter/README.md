@@ -50,7 +50,7 @@ First let's discuss what to add in the p4 file. Under `p4src` there is a file ca
 
 The overview of things to complete are as follows.
 
-1. Define constants for determining heavy hitters. For simplicity, let's define a host who sends 1000 or more packets to be the heavy hitter.
+1. Define constants for determining heavy hitters. For simplicity, let's define a five tuple who sends 100 or more packets to be the heavy hitter.
 2. Update the metadata to contain the hash values and the counter values.
 3. Define field_list to compute the hash for the flow. This should basically be the five tuple that we discussed above.
 4. Define two separate hashes to generate the hash indices
