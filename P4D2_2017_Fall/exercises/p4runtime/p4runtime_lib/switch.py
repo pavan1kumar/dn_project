@@ -34,8 +34,8 @@ class SwitchConnection(object):
     def SetForwardingPipelineConfig(self, p4info, dry_run=False, **kwargs):
         device_config = self.buildDeviceConfig(**kwargs)
         request = p4runtime_pb2.SetForwardingPipelineConfigRequest()
-        config = request.configs.add()
-        config.device_id = self.device_id
+        request.device_id = self.device_id
+        config = request.config
         config.p4info.CopyFrom(p4info)
         config.p4_device_config = device_config.SerializeToString()
         request.action = p4runtime_pb2.SetForwardingPipelineConfigRequest.VERIFY_AND_COMMIT

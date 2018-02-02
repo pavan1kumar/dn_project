@@ -30,11 +30,11 @@ def writeTunnelRules(p4info_helper, ingress_sw, egress_sw, tunnel_id,
     '''
     # 1) Tunnel Ingress Rule
     table_entry = p4info_helper.buildTableEntry(
-        table_name="ipv4_lpm",
+        table_name="MyIngress.ipv4_lpm",
         match_fields={
             "hdr.ipv4.dstAddr": (dst_ip_addr, 32)
         },
-        action_name="myTunnel_ingress",
+        action_name="MyIngress.myTunnel_ingress",
         action_params={
             "dst_id": tunnel_id,
         })
@@ -67,11 +67,11 @@ def writeTunnelRules(p4info_helper, ingress_sw, egress_sw, tunnel_id,
     # In general, you will need to keep track of which port the host is
     # connected to.
     table_entry = p4info_helper.buildTableEntry(
-        table_name="myTunnel_exact",
+        table_name="MyIngress.myTunnel_exact",
         match_fields={
             "hdr.myTunnel.dst_id": tunnel_id
         },
-        action_name="myTunnel_egress",
+        action_name="MyIngress.myTunnel_egress",
         action_params={
             "dstAddr": dst_eth_addr,
             "port": SWITCH_TO_HOST_PORT
@@ -121,8 +121,12 @@ def main(p4info_file_path, bmv2_file_path):
 
     # Create a switch connection object for s1 and s2;
     # this is backed by a P4 Runtime gRPC connection
-    s1 = p4runtime_lib.bmv2.Bmv2SwitchConnection('s1', address='127.0.0.1:50051')
-    s2 = p4runtime_lib.bmv2.Bmv2SwitchConnection('s2', address='127.0.0.1:50052')
+    s1 = p4runtime_lib.bmv2.Bmv2SwitchConnection('s1',
+                                                 address='127.0.0.1:50051',
+                                                 device_id=0)
+    s2 = p4runtime_lib.bmv2.Bmv2SwitchConnection('s2',
+                                                 address='127.0.0.1:50052',
+                                                 device_id=1)
 
     # Install the P4 program on the switches
     s1.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
@@ -149,10 +153,10 @@ def main(p4info_file_path, bmv2_file_path):
         while True:
             sleep(2)
             print '\n----- Reading tunnel counters -----'
-            printCounter(p4info_helper, s1, "ingressTunnelCounter", 100)
-            printCounter(p4info_helper, s2, "egressTunnelCounter", 100)
-            printCounter(p4info_helper, s2, "ingressTunnelCounter", 200)
-            printCounter(p4info_helper, s1, "egressTunnelCounter", 200)
+            printCounter(p4info_helper, s1, "MyIngress.ingressTunnelCounter", 100)
+            printCounter(p4info_helper, s2, "MyIngress.egressTunnelCounter", 100)
+            printCounter(p4info_helper, s2, "MyIngress.ingressTunnelCounter", 200)
+            printCounter(p4info_helper, s1, "MyIngress.egressTunnelCounter", 200)
     except KeyboardInterrupt:
         print " Shutting down."
 
